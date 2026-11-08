@@ -30,15 +30,17 @@ namespace EventHub.Application.Features.Events.Queries.GetAllEvent
 
         public async Task<Result<PagedResult<EventListResponse>>> Handle(GetAllEventsQuery request, CancellationToken cancellationToken)
         {
+            string? cacheKey = null;
 
-             var cacheVersion=await _versionService.GetOrCreateVersionAsync();
-           
-
-            var cacheKey = BuildCacheKey(request,cacheVersion);
-            
             try
             {
-                var cachedResponse = await _cacheService.GetCacheAsync( cacheKey,cancellationToken);
+                var cacheVersion = await _versionService.GetOrCreateVersionAsync();
+
+                cacheKey = BuildCacheKey(request, cacheVersion);
+
+                var cachedResponse = await _cacheService.GetCacheAsync(
+                    cacheKey,
+                    cancellationToken);
 
                 _logger.LogInformation(
                     "Cache lookup: Key={CacheKey}, Hit={CacheHit}",
@@ -47,23 +49,20 @@ namespace EventHub.Application.Features.Events.Queries.GetAllEvent
 
                 if (cachedResponse is not null)
                 {
-                    _logger.LogInformation(
-                        "Public events cache hit: {CacheKey}",
-                        cacheKey);
-
                     return Result<PagedResult<EventListResponse>>.Ok(cachedResponse);
                 }
             }
-
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 throw;
             }
-
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to read public events from cache.");
+                _logger.LogWarning(
+                    ex,
+                    "Redis is unavailable. Falling back to database.");
             }
+
 
 
             var spec = new PublishedEventsSpecification(request);
@@ -105,17 +104,26 @@ namespace EventHub.Application.Features.Events.Queries.GetAllEvent
                     events.TotalCount,
                     events.TotalPages);
 
-            try
+            if (cacheKey is not null)
             {
-                await _cacheService.AddCacheAsync(cacheKey, pagedResponse, TimeSpan.FromMinutes(5), cancellationToken);
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to write public events to cache.");
+                try
+                {
+                    await _cacheService.AddCacheAsync(
+                        cacheKey,
+                        pagedResponse,
+                        TimeSpan.FromMinutes(5),
+                        cancellationToken);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Failed to write public events to cache.");
+                }
             }
 
             return Result<PagedResult<EventListResponse>>.Ok(pagedResponse);
@@ -136,7 +144,7 @@ namespace EventHub.Application.Features.Events.Queries.GetAllEvent
                         ? "startdate"
                         : request.SortBy.Trim().ToLowerInvariant();
 
-            return $"Event : Public:search:{searchTerm}" +
+            return $"Event:Public:search:{searchTerm}" +
                 $":category:{category}" +
                 $":from:{startDateFrom}" +
                 $":to:{startDateTo}" +

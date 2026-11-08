@@ -27,7 +27,7 @@ namespace EventHub.API.Controllers
             [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey, CancellationToken ct)
         {
             var command=new CreateBookingCommand(request,idempotencyKey ?? string.Empty);
-            var result = await _mediator.Send(command);
+            var result = await _mediator.Send(command,ct);
             return ToActionResult(result);
         }
 

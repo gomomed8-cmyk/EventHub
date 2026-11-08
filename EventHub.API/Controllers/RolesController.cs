@@ -16,7 +16,7 @@ namespace EventHub.API.Controllers
         }
         [Authorize(Roles = "Admin")]
         [HttpPost("promote-to-organizer")]
-        public async Task<Result<ActionResult>> PromoteToOrganizer(PromoteToOrganizerCommand command, CancellationToken ct)
+        public async Task<ActionResult> PromoteToOrganizer(PromoteToOrganizerCommand command, CancellationToken ct)
         {
             var result=await _mediator.Send(command, ct);
 

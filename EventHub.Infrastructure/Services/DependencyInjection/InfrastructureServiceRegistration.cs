@@ -45,7 +45,13 @@ namespace EventHub.Infrastructure.Services.DependencyInjection
             });
             services.AddSingleton<IConnectionMultiplexer>(config =>
             {
-                return ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis")!);
+                var redisConnection = configuration.GetConnectionString("Redis")!;
+
+                var options = ConfigurationOptions.Parse(redisConnection);
+
+                options.AbortOnConnectFail = false;
+
+                return ConnectionMultiplexer.Connect(options);
             });
             services.AddHangfire(options =>
             {

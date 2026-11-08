@@ -13,17 +13,21 @@ namespace EventHub.Application.Features.Events.Commands.UpdateEvent
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPublicEventsCacheVersionService _cacheVersionService;
+        private readonly ICurrentUserService _currentUserService;
 
-        public UpdateEventCommandHandler(IUnitOfWork unitOfWork,IPublicEventsCacheVersionService cacheVersionService)
+        public UpdateEventCommandHandler(IUnitOfWork unitOfWork,IPublicEventsCacheVersionService cacheVersionService,ICurrentUserService currentUserService)
         {
             _unitOfWork = unitOfWork;
             _cacheVersionService = cacheVersionService;
+            _currentUserService = currentUserService;
         }
 
         public async Task<Result<EventResponse>> Handle(
             UpdateEventCommand request,
             CancellationToken cancellationToken)
         {
+            var currentUserId = _currentUserService.UserId;
+            
             var spec=new UpdateEventSpecification(request.EventId);
 
             var eventRepository = _unitOfWork.GetRepository<Event, Guid>();
@@ -39,7 +43,15 @@ namespace EventHub.Application.Features.Events.Commands.UpdateEvent
                         ErrorType.NotFound));
             }
 
-          
+            if (eventEntity.OrganizerId != currentUserId)
+            {
+                return Result<EventResponse>.Fail(
+                    new Error(
+                        "It is Not Allowed to Update this event",
+                        "event.Forbidden",
+                        ErrorType.Forbidden));
+            }
+
             if (eventEntity.Status != EventStatus.Draft)
             {
                 return Result<EventResponse>.Fail(
