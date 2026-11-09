@@ -47,7 +47,7 @@ namespace EventHub.Application.Features.Bookings.Queries.GetEventBookingSummary
                         ErrorType.NotFound));
             }
 
-            if (eventEntity.OrganizerId != userId)
+            if (!_currentUserService.IsInRole("Admin") && eventEntity.OrganizerId != userId)
             {
                 return Result<EventBookingSummaryResponse>.Fail(
                     new Error(

@@ -24,7 +24,13 @@ namespace EventHub.Application.Features.Bookings.Queries.Get_Bookings_by_Id
             {
                 return UserErrors.Unauthorized;
             }
-            var spec= new GetBookingByIdSpecification(request.BookingId,userId);
+
+            var isAdmin = _currentUserService.IsInRole("Admin");
+
+            var spec = new GetBookingByIdSpecification(
+                request.BookingId,
+                isAdmin ? null : userId);
+
             var book=await _unitOfWork.GetRepository<Booking,Guid>()
                 .GetByIdAsync(spec,cancellationToken);
             if (book == null)

@@ -37,9 +37,9 @@ namespace EventHub.Application.Features.Bookings.Queries.GetEventBookings
             {
                 return Result<PagedResult<OrganizerBookingListResponse>>.Fail(
                     new Error(
-                        "User.Unauthorized",
-                        "The current user is not authenticated.",
-                        ErrorType.Unauthorized));
+                        "User.Forbidden",
+                        "You are not the owner if this event",
+                        ErrorType.Forbidden));
             }
 
             if (request.EventId == Guid.Empty)
@@ -78,7 +78,7 @@ namespace EventHub.Application.Features.Bookings.Queries.GetEventBookings
                         ErrorType.NotFound));
             }
 
-            if (eventEntity.OrganizerId != userId)
+            if (!_currentUserService.IsInRole("Admin") && eventEntity.OrganizerId != userId)
             {
                 return Result<PagedResult<OrganizerBookingListResponse>>.Fail(
                     new Error(

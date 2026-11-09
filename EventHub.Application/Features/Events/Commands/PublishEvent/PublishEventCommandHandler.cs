@@ -20,9 +20,7 @@ namespace EventHub.Application.Features.Events.Commands.PublishEvent
             _currentUserService = currentUserService;
         }
 
-        public async Task<Result<PublishEventCommandResponse>> Handle(
-            PublishEventCommand request,
-            CancellationToken cancellationToken)
+        public async Task<Result<PublishEventCommandResponse>> Handle(PublishEventCommand request,CancellationToken cancellationToken)
         {
             var currentUserId = _currentUserService.UserId;
             var spec= new PublishEventSpecification(request.EventId);
@@ -38,12 +36,12 @@ namespace EventHub.Application.Features.Events.Commands.PublishEvent
                         "Event Not Found",
                         ErrorType.NotFound));
             }
-            if(eventEntity.OrganizerId != currentUserId)
+            if (!_currentUserService.IsInRole("Admin") &&eventEntity.OrganizerId != currentUserId)
             {
                 return Result<PublishEventCommandResponse>.Fail(
                     new Error(
-                        "It is Not Allowed to publish this event",
-                        "event.Forbidden",
+                        "Event.Forbidden",
+                        "You are not allowed to publish this event.",
                         ErrorType.Forbidden));
             }
             if (eventEntity.Status != EventStatus.Draft)

@@ -43,7 +43,7 @@ namespace EventHub.Application.Features.Events.Commands.UpdateEvent
                         ErrorType.NotFound));
             }
 
-            if (eventEntity.OrganizerId != currentUserId)
+            if (!_currentUserService.IsInRole("Admin") && eventEntity.OrganizerId != currentUserId)
             {
                 return Result<EventResponse>.Fail(
                     new Error(

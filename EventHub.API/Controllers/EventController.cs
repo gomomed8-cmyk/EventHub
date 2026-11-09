@@ -54,7 +54,7 @@ namespace EventHub.API.Controllers
             return ToActionResult(result);
         }
 
-        [Authorize(Roles = "Organizer")]
+        [Authorize(Roles = "Admin,Organizer")]
         [HttpPost("{eventId:guid}/publish")]
         public async Task<ActionResult<PublishEventCommandResponse>> PublishEvent(Guid eventId,CancellationToken ct)
         {
@@ -62,7 +62,7 @@ namespace EventHub.API.Controllers
             return ToActionResult(result);
         }
 
-        [Authorize(Roles = "Organizer")]
+        [Authorize(Roles = "Admin,Organizer")]
         [HttpPatch("{eventId:guid}")]
         public async Task<ActionResult<EventResponse>> UpdateEvent(Guid eventId, [FromBody] UpdateEventRequest updateEventRequest,CancellationToken ct)
         {
@@ -71,7 +71,7 @@ namespace EventHub.API.Controllers
             return ToActionResult(result);
         }
 
-        [Authorize(Roles = "Organizer")]
+        [Authorize(Roles = "Admin,Organizer")]
         [HttpPost("{eventId:guid}/cancel")]
         public async Task<ActionResult<Unit>> CancelEvent(Guid eventId,CancellationToken ct)
         {
@@ -83,7 +83,7 @@ namespace EventHub.API.Controllers
             return ToActionResult(result);
         }
 
-        [Authorize(Roles = "Organizer")]
+        [Authorize(Roles = "Admin,Organizer")]
         [HttpGet("{eventId:guid}/bookings")]
         public async Task<ActionResult<PagedResult<OrganizerBookingListResponse>>> GetEventBookings(Guid eventId,
             [FromQuery] GetEventBookingsQuery query,
@@ -95,7 +95,7 @@ namespace EventHub.API.Controllers
             return ToActionResult(result);
         }
 
-        [Authorize(Roles = "Organizer")]
+        [Authorize(Roles = "Admin,Organizer")]
         [HttpGet("{eventId:guid}/booking-summary")]
         public async Task<ActionResult<EventBookingSummaryResponse>> GetEventBookingSummary( Guid eventId,CancellationToken cancellationToken)
         {

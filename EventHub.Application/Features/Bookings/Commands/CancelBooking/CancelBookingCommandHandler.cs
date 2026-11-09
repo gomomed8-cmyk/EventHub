@@ -36,9 +36,11 @@ namespace EventHub.Application.Features.Bookings.Commands.CancelBooking
 
             try
             {
+                var isAdmin = _currentUserService.IsInRole("Admin");
+
                 var spec = new CancelBookingSpecification(
                     request.BookingId,
-                    userId);
+                    isAdmin ? null : userId);
 
                 var booking = await bookingRepository.GetByIdAsync(
                     spec,

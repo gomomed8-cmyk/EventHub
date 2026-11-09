@@ -9,10 +9,13 @@ namespace EventHub.Application.Features.Events.Commands.CancelEvent
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserService _currentUserService;
-        public CancelEventCommandHandler(IUnitOfWork unitOfWork,ICurrentUserService currentUserService)
+        private readonly IPublicEventsCacheVersionService _cacheVersionService;
+        public CancelEventCommandHandler(IUnitOfWork unitOfWork,ICurrentUserService currentUserService,
+            IPublicEventsCacheVersionService cacheVersionService)
         { 
             _unitOfWork = unitOfWork; 
             _currentUserService = currentUserService;
+            _cacheVersionService = cacheVersionService;
         }
         
         public async Task<Result<Unit>> Handle(CancelEventCommand request, CancellationToken cancellationToken)
@@ -27,7 +30,7 @@ namespace EventHub.Application.Features.Events.Commands.CancelEvent
                     new Error("Event not found", "Event.NotFound",
                     ErrorType.NotFound));
             }
-            if (@event.OrganizerId != currentUserId)
+            if (!_currentUserService.IsInRole("Admin") && @event.OrganizerId != currentUserId)
             {
                 return Result<Unit>.Fail(
                     new Error("You are not authorized to cancel this event", "Event.Unauthorized",
@@ -62,8 +65,13 @@ namespace EventHub.Application.Features.Events.Commands.CancelEvent
                         ErrorType.Conflict));
             }
             @event.Status = EventStatus.Cancelled;
+
             _unitOfWork.GetRepository<Event,Guid>().Update(@event);
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            await _cacheVersionService.RefreshVersionAsync();
+
             return Result<Unit>.Ok(Unit.Value);
         }
     }
