@@ -15,6 +15,7 @@ The project demonstrates practical backend engineering concepts such as Clean Ar
 - [Technology Stack](#technology-stack)
 - [Booking and Payment Workflow](#booking-and-payment-workflow)
 - [Background Processing](#background-processing)
+- [Role-Based Authorization](#role-based-authorization)
 - [API Reference](#api-reference)
 - [Database and Storage](#database-and-storage)
 - [Getting Started](#getting-started)
@@ -34,7 +35,7 @@ The project demonstrates practical backend engineering concepts such as Clean Ar
 - Role-based authorization with `User`, `Organizer`, and `Admin` roles.
 - Roles and the configured administrator account are seeded during startup.
 - Refresh tokens are stored using Redis.
-- Only an Admin can promote a user to the Organizer role.
+- Admins can publish, update, and cancel events, view event bookings and booking summaries, and promote users to the Organizer role.
 
 ### Event Management
 
@@ -213,6 +214,22 @@ Hangfire uses SQL Server for persistent job storage.
 
 ---
 
+## Role-Based Authorization
+
+EventHub uses three roles: `User`, `Organizer`, and `Admin`.
+
+| Role | Permissions |
+|---|---|
+| **User** | Browse public events, create and manage bookings through authenticated endpoints, and initiate payments for bookings. |
+| **Organizer** | Create events, retrieve their organizer event listing, publish and update events, cancel events, and view event bookings and booking summaries. |
+| **Admin** | Publish and update events, cancel events, view event bookings and booking summaries, and promote users to the Organizer role. |
+
+### Endpoint Access
+
+- **Public:** Registration, login, token refresh, public event browsing, and the Paymob webhook endpoint. The webhook payload is validated using HMAC before processing.
+- **Authenticated:** Booking operations and payment initiation require an authenticated user.
+- **Role-restricted:** Event creation and the organizer event listing require the `Organizer` role. Event publishing, updating, cancellation, booking lists, and booking summaries allow `Admin` and `Organizer`. Promoting a user to `Organizer` requires the `Admin` role.
+
 ## API Reference
 
 The following endpoints are implemented by the API controllers. Run the application in the Development environment to inspect detailed request and response schemas in Swagger.
@@ -237,11 +254,11 @@ The following endpoints are implemented by the API controllers. Run the applicat
 | GET | `/api/Event/{eventId}` | Retrieve event details. | Public |
 | POST | `/api/Event` | Create a new event. | Organizer |
 | GET | `/api/Event/my-events` | Retrieve the organizer's events. | Organizer |
-| POST | `/api/Event/{eventId}/publish` | Publish an event. | Organizer |
-| PATCH | `/api/Event/{eventId}` | Update an event. | Organizer |
-| POST | `/api/Event/{eventId}/cancel` | Cancel an event. | Organizer |
-| GET | `/api/Event/{eventId}/bookings` | Retrieve bookings for an event. | Organizer |
-| GET | `/api/Event/{eventId}/booking-summary` | Retrieve event booking statistics. | Organizer |
+| POST | `/api/Event/{eventId}/publish` | Publish an event. | Admin, Organizer |
+| PATCH | `/api/Event/{eventId}` | Update an event. | Admin, Organizer |
+| POST | `/api/Event/{eventId}/cancel` | Cancel an event. | Admin, Organizer |
+| GET | `/api/Event/{eventId}/bookings` | Retrieve bookings for an event. | Admin, Organizer |
+| GET | `/api/Event/{eventId}/booking-summary` | Retrieve event booking statistics. | Admin, Organizer |
 
 ### Bookings
 
